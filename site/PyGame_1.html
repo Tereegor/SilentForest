@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Проект на Pygame: Интерактивная игра на Python.">
+  <title>Тишина в лесу</title>
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>Тишина в лесу</h1>
+  <p>Добро пожаловать в мир загадок и страха.</p>
+</header>
+<nav>
+  <a href="#about">О проекте</a>
+  <a href="#features">Особенности</a>
+  <a href="PyGame_2.html">О нашей игре</a>
+  <a href="#download">Скачать</a>
+</nav>
+<div class="container">
+
+  <section class="content" id="about">
+    <div class="card">
+      <h2>О проекте</h2>
+      <p>Тишина в лесу — это психологический хоррор с элементами выживания. Вы играете за журналиста, попавшего в
+        таинственную деревню. Исследуйте лес, записывайте улики, ищите ресурсы, избегайте опасностей и постарайтесь
+        узнать правду, сохранив рассудок.</p>
+      <div class="info-block">
+        <h3>Технические особенности</h3>
+        <p>Проект использует следующие библиотеки:</p>
+        <ul>
+          <li>- pygame — для реализации графики и взаимодействия.</li>
+          <li>- json — для работы с файлами конфигурации и сохранений.</li>
+          <li>- random — для генерации леса.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="content" id="features">
+    <div class="card">
+      <h3>Особенности игры:</h3>
+      <p>- Лес генерируется случайным образом для каждой новой игры.<br/>
+        - Атмосферное звуковое сопровождение с динамическими эффектами.<br/>
+        - Простая, но стильная пиксельная графика.<br/>
+        - Возможность выбора разных концовок в зависимости от действий игрока.</p>
+    </div>
+  </section>
+
+  <section class="content" id="download">
+    <div class="card">
+      <h3>Скачать игру</h3>
+      <p>Готовы к приключению? Скачайте последнюю версию игры и наслаждайтесь захватывающим игровым процессом. Мы
+        гарантируем, что это будет незабываемо!</p>
+      <a href="https://github.com/Tereegor/SilentForest" class="btn" target="_blank">Скачать игру</a>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <p>&copy; 2024 Проект на Pygame. Все права защищены.</p>
+  <p><a href="https://github.com/Tereegor/SilentForest" target="_blank">Репозиторий на GitHub</a></p>
+</footer>
+
+<button class="theme-toggle" id="themeToggle">Светлая тема</button>
+
+<script>
+  const themeToggle = document.getElementById("themeToggle");
+  const body = document.body;
+
+  themeToggle.addEventListener("click", () => {
+    const isDark = body.getAttribute("data-theme") === "dark";
+    body.setAttribute("data-theme", isDark ? "light" : "dark");
+    themeToggle.textContent = isDark ? "Тёмная тема" : "Светлая тема";
+  });
+</script>
+
+<script>
+  document.querySelectorAll("nav a").forEach(anchor => {
+    anchor.addEventListener("click", function (e) {
+      e.preventDefault();
+      document.querySelector(this.getAttribute("href")).scrollIntoView({
+        behavior: "smooth"
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

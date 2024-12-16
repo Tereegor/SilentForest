@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+        content="О нашей игре на Pygame. Узнайте больше о её сюжете, механиках и уникальных особенностях.">
+  <title>О нашей игре</title>
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>О нашей игре</h1>
+  <p>Узнайте всё о захватывающем мире игры, Тишина в лесу.</p>
+</header>
+<nav>
+  <a href="PyGame_1.html">Главная</a>
+  <a href="#story">Сюжет</a>
+  <a href="#gameplay">Игровой процесс</a>
+  <a href="#gallery">Галерея</a>
+</nav>
+<div class="container">
+
+  <section class="content" id="story">
+    <div class="card">
+      <h2>Сюжет</h2>
+      <ul>
+        <li>- Завязка: Журналист прибывает в деревню, где местные жители боятся ночи. Они говорят, что "существа"
+          забирают нарушителей тишины.</li>
+        <li>- Развитие: Исследуя лес, игрок узнаёт о проклятии, связанном с исчезновениями. Он находит странные символы,
+          слышит голоса и начинает терять связь с реальностью.</li>
+        <li>- Твист: Выясняется, что игрок связан с этой деревней. Проклятие связано с трагедией, в которой он
+          участвовал в детстве.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="content" id="gameplay">
+    <div class="card">
+      <h2>Основные механики</h2>
+      <p>1. Выживание:</p>
+      <ul>
+        <li>- Игрок должен находить припасы: еду, воду, спички.</li>
+        <li>- У персонажа есть показатели здоровья, усталости и голода.</li>
+        <li>- Ресурсы ограничены, их нужно использовать с умом.</li>
+      </ul>
+      <p>2. Звуковое восприятие:</p>
+      <ul>
+        <li>- Некоторые сущности видны только через звуки (визуализируются в виде кругов на карте).</li>
+        <li>- Неверное восприятие звуков может привести к гибели.</li>
+      </ul>
+      <p>3. Дневник:</p>
+      <ul>
+        <li>- Все найденные улики автоматически записываются в дневник.</li>
+        <li>- Через дневник раскрывается сюжет.</li>
+      </ul>
+      <p>4. Динамическая опасность:</p>
+      <ul>
+        <li>- Нарушение тишины (например, бег или громкие действия) привлекает "сущностей".</li>
+        <li>- Чем больше шума, тем выше уровень опасности.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="content" id="gallery">
+    <div class="card game-details">
+      <h2>Галерея</h2>
+      <p>Ниже представлены скриншоты из игры:</p>
+      <img src="screenshot1.jpg" alt="Скриншот из игры 1">
+      <img src="screenshot2.jpg" alt="Скриншот из игры 2">
+    </div>
+  </section>
+
+  <section class="content">
+    <div class="card">
+      <h2>Скачайте игру</h2>
+      <p>Попробуйте сами! Скачайте игру прямо сейчас:</p>
+      <a href="https://github.com/Tereegor/SilentForest" class="btn" target="_blank">Скачать</a>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <p>&copy; 2024 Проект на Pygame. Все права защищены.</p>
+  <p><a href="https://github.com/Tereegor/SilentForest" target="_blank">Репозиторий на GitHub</a></p>
+</footer>
+
+<button class="theme-toggle" id="themeToggle">Светлая тема</button>
+
+<script>
+  const themeToggle = document.getElementById("themeToggle");
+  const body = document.body;
+
+  themeToggle.addEventListener("click", () => {
+    const isDark = body.getAttribute("data-theme") === "dark";
+    body.setAttribute("data-theme", isDark ? "light" : "dark");
+    themeToggle.textContent = isDark ? "Тёмная тема" : "Светлая тема";
+  });
+</script>
+
+<script>
+  document.querySelectorAll("nav a").forEach(anchor => {
+    anchor.addEventListener("click", function (e) {
+      e.preventDefault();
+      document.querySelector(this.getAttribute("href")).scrollIntoView({
+        behavior: "smooth"
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
