@@ -70,7 +70,7 @@ pip install -r requirements.txt
 
 1. Клонируйте репозиторий:
 ```
-git clone https://github.com/your_username/SilentForest.git
+git clone https://github.com/Tereegor/SilentForest.git
 cd SilentForest
 ```
 
