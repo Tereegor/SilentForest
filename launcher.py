@@ -2,9 +2,6 @@ import pygame
 import os
 import json
 
-
-pygame.init()
-
 forest_bg = pygame.image.load("assets/images/forest_background.jpg")
 forest_bg = pygame.transform.scale(forest_bg, (1000, 529))
 
@@ -18,9 +15,6 @@ BLACK = (0, 0, 0)
 BUTTON_COLOR = (34, 139, 34)
 HIGHLIGHT_COLOR = (0, 128, 0)
 BUTTON_BORDER_COLOR = (0, 100, 0)
-
-font = pygame.font.SysFont("Impact", 50)
-sub_font = pygame.font.SysFont("Roboto", 30)
 
 SAVE_FILE = "save.json"
 
@@ -38,8 +32,11 @@ def render_text(text, font, color, x, y):
     screen.blit(text_surface, text_rect)
 
 
-# Главная функция лаунчера
 def main():
+    pygame.init()
+    font = pygame.font.SysFont("Impact", 50)
+    sub_font = pygame.font.SysFont("Roboto", 30)
+
     running = True
     save_data = load_save()
 
@@ -55,7 +52,7 @@ def main():
 
         new_game_button = pygame.Rect(250, 150, 500, 50)
         pygame.draw.rect(screen, BUTTON_COLOR, new_game_button)
-        pygame.draw.rect(screen, BUTTON_BORDER_COLOR, new_game_button, 3)  # Обводка кнопки
+        pygame.draw.rect(screen, BUTTON_BORDER_COLOR, new_game_button, 3)
         render_text("Новая игра", sub_font, WHITE, WIDTH // 2, 175)
 
         if save_data:
