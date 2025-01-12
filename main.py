@@ -1,7 +1,9 @@
 # main.py
+import launcher
+
 
 def main():
-    pass
+    launcher.main()
 
 
 if __name__ == "__main__":
