@@ -95,13 +95,6 @@ python main.py
 
 Сайт нашей игры
 ---------------
+[Главная страница](https://goo.su/1xGnM)
 
-Главная страница
-```
-https://goo.su/1xGnM
-```
-
-Об игре
-```
-https://goo.su/t6zj
-```
+[О самой игре](https://goo.su/t6zj)
