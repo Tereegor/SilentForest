@@ -6,7 +6,7 @@ import json
 TILE_SIZE = 10
 MAP_FILE = "assets/for_game/map.shifr"
 SAVE_FILE = "save.json"
-DIARY_FILE = "assets/for_game/diary.shifr"
+DIARY_FILE = "assets/for_game/diary.txt"
 
 COLORS = {
     "#": (139, 69, 19),  # Коричневый цвет для стены
@@ -21,14 +21,12 @@ pygame.init()
 screen = pygame.display.set_mode((800, 600))
 pygame.display.set_caption("SilentForest (Beta)")
 
-
 def load_map(file_path):
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Файл карты {file_path} не найден")
 
     with open(file_path, "r") as f:
         return [line.strip() for line in f.readlines()]
-
 
 def load_hero_data(file_path):
     if not os.path.exists(file_path):
@@ -38,14 +36,12 @@ def load_hero_data(file_path):
         data = json.load(file)
         return data.get("selected_hero", "default_hero.png")
 
-
 def load_diary(file_path):
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Файл дневника {file_path} не найден")
 
-    with open(file_path, "r") as file:
+    with open(file_path, "r", encoding="utf-8") as file:
         return [line.strip() for line in file.readlines()]
-
 
 def draw_map(game_map, player_pos, offset_x, offset_y, player_image):
     for y, row in enumerate(game_map):
@@ -55,7 +51,6 @@ def draw_map(game_map, player_pos, offset_x, offset_y, player_image):
                 pygame.draw.rect(screen, color,
                                  ((x - offset_x) * TILE_SIZE, (y - offset_y) * TILE_SIZE, TILE_SIZE, TILE_SIZE))
     screen.blit(player_image, ((player_pos[0] - offset_x) * TILE_SIZE, (player_pos[1] - offset_y) * TILE_SIZE))
-
 
 def is_walkable(game_map, x, y):
     for dx in range(3):
@@ -68,14 +63,12 @@ def is_walkable(game_map, x, y):
                 return False
     return True
 
-
 def display_inventory(diary):
     running = True
     font = pygame.font.Font(None, 24)
     header_font = pygame.font.Font(None, 36)
     background_color = (50, 50, 50)
     text_color = (255, 255, 255)
-    selected_color = (70, 70, 150)
     padding = 10
 
     diary_surface = pygame.Surface((600, 400))
@@ -86,6 +79,7 @@ def display_inventory(diary):
 
     scroll_offset = 0
     max_visible_lines = 15
+    diary_opened = False
 
     while running:
         for event in pygame.event.get():
@@ -93,24 +87,35 @@ def display_inventory(diary):
                 pygame.quit()
                 exit()
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
+                if event.key == pygame.K_i:
                     running = False
                 if event.key == pygame.K_DOWN:
                     scroll_offset = min(scroll_offset + 1, max(0, len(diary) - max_visible_lines))
                 if event.key == pygame.K_UP:
                     scroll_offset = max(scroll_offset - 1, 0)
+                if event.key == pygame.K_RETURN:  # Открыть дневник
+                    diary_opened = True
 
         diary_surface.fill(background_color)
         diary_surface.blit(header, (padding, padding))
 
-        for i, line in enumerate(diary[scroll_offset:scroll_offset + max_visible_lines]):
-            line_y = padding + 40 + i * 25
-            rendered_line = font.render(line, True, text_color)
-            diary_surface.blit(rendered_line, (padding, line_y))
+        if diary_opened:
+            diary_content = load_diary(DIARY_FILE)
+            y_offset = padding + 40
+            for line in diary_content:
+                rendered_line = font.render(line, True, text_color)
+                diary_surface.blit(rendered_line, (padding, y_offset))
+                y_offset += 25
+        else:
+            for i, line in enumerate(diary[scroll_offset:scroll_offset + max_visible_lines]):
+                line_y = padding + 40 + i * 25
+                rendered_line = font.render(line, True, text_color)
+                if line == "Дневник":
+                    rendered_line = font.render(f"> {line} <", True, text_color)
+                diary_surface.blit(rendered_line, (padding, line_y))
 
         screen.blit(diary_surface, (100, 100))
         pygame.display.flip()
-
 
 def main():
     clock = pygame.time.Clock()
@@ -126,7 +131,7 @@ def main():
     player_image = pygame.transform.scale(player_image, (TILE_SIZE * 3, TILE_SIZE * 3))
 
     game_map = load_map(MAP_FILE)
-    diary = load_diary(DIARY_FILE)
+    diary = ["Дневник"]  # Элемент дневника в инвентаре
 
     player_pos = [1, 1]
 
@@ -173,7 +178,6 @@ def main():
         clock.tick(30)
 
     pygame.quit()
-
 
 if __name__ == "__main__":
     main()
