@@ -31,6 +31,12 @@ plenty_number = []
 Need_write = [1]
 your_place = []
 
+with open('dictwriter.csv', 'w', newline='', encoding="utf8") as f:
+    writer = csv.writer(
+        f, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    writer.writerow(['Результаты гонки'])
+
+
 def load_image(name, colorkey=-1):
     fullname = os.path.join('data', name)
     if not os.path.isfile(fullname):
@@ -48,6 +54,70 @@ def load_image(name, colorkey=-1):
     else:
         image = image.convert_alpha()
     return image
+
+
+def terminate():
+    pygame.quit()
+    sys.exit()
+
+
+def start_screen():
+    intro_text = ["Правила игры",
+                  "Нужно набрать как можно больше монет",
+                  "за две минут не касаясь лесов"]
+
+    fon = pygame.transform.scale(load_image('Start_foto.jpeg'), (1000, 700))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 35)
+    text_coord = 50
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('Yellow'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.bottom = text_coord
+        intro_rect.x = 280
+
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+    intro_text_2 = ["Управление",
+                    "кнопки: вверх, вниз, вправо, влево - передвигают машинку",
+                    "кнопки: вверх и вправо, влево и вправо, разворачивают машинку",
+                    "кнопки: плюс и минус добавляют скорость",
+                    "удачной игры!"]
+    font = pygame.font.Font(None, 35)
+    text_coord = 150
+    for line in intro_text_2:
+        string_rendered = font.render(line, 1, pygame.Color('Yellow'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.bottom = text_coord
+        intro_rect.x = 20
+
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+    sprite_sheet_run = load_image("Jump.png", 2)
+    jump_right = [sprite_sheet_run.subsurface((55 * i, 210, 50, 110)) for i in range(6)]
+    Number = 1
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or \
+                    event.type == pygame.MOUSEBUTTONDOWN:
+                return
+        if Number < 5:
+            Number += 0.1
+        else:
+            Number = 1
+        pygame.draw.line(screen, pygame.Color('white'), (0, 390), (1000, 390), 120)
+        screen.blit(jump_right[int(Number)], (250, 350))
+        pygame.display.flip()
+        clock.tick(fps)
+
+
+start_screen()
 
 
 class Fences(pygame.sprite.Sprite):
@@ -127,7 +197,6 @@ def place_total():
             plenty_finally.append(int(plenty_place[i][0]))
         plenty_finally_2 = sorted(plenty_finally)
         your_place.append(len(plenty_finally) - plenty_finally_2.index(plenty_money[0]))
-
 
 
 def remaining_time(screen):
@@ -434,13 +503,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if keys[pygame.K_UP] and keys[pygame.K_RIGHT]:
-            # screen.fill('white')
-            # road(screen)
-            # all_sprites.update()
-            # all_sprites.draw(screen)
             name.turn_right()
-            # clock.tick(fps)
-            # pygame.display.flip()
         elif keys[pygame.K_UP] and keys[pygame.K_LEFT]:
             name.turn_left()
         if event.type == pygame.KEYDOWN:
