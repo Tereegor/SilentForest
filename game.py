@@ -21,12 +21,14 @@ pygame.init()
 screen = pygame.display.set_mode((800, 600))
 pygame.display.set_caption("SilentForest (Beta)")
 
+
 def load_map(file_path):
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Файл карты {file_path} не найден")
 
     with open(file_path, "r") as f:
         return [line.strip() for line in f.readlines()]
+
 
 def load_hero_data(file_path):
     if not os.path.exists(file_path):
@@ -36,12 +38,14 @@ def load_hero_data(file_path):
         data = json.load(file)
         return data.get("selected_hero", "default_hero.png")
 
+
 def load_diary(file_path):
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Файл дневника {file_path} не найден")
 
     with open(file_path, "r", encoding="utf-8") as file:
         return [line.strip() for line in file.readlines()]
+
 
 def draw_map(game_map, player_pos, offset_x, offset_y, player_image):
     for y, row in enumerate(game_map):
@@ -51,6 +55,7 @@ def draw_map(game_map, player_pos, offset_x, offset_y, player_image):
                 pygame.draw.rect(screen, color,
                                  ((x - offset_x) * TILE_SIZE, (y - offset_y) * TILE_SIZE, TILE_SIZE, TILE_SIZE))
     screen.blit(player_image, ((player_pos[0] - offset_x) * TILE_SIZE, (player_pos[1] - offset_y) * TILE_SIZE))
+
 
 def is_walkable(game_map, x, y):
     for dx in range(3):
@@ -62,6 +67,7 @@ def is_walkable(game_map, x, y):
             if game_map[check_y][check_x] not in (".", "~", "D"):  # Проходимые клетки
                 return False
     return True
+
 
 def display_inventory(diary):
     running = True
@@ -116,6 +122,7 @@ def display_inventory(diary):
 
         screen.blit(diary_surface, (100, 100))
         pygame.display.flip()
+
 
 def main():
     clock = pygame.time.Clock()
@@ -178,6 +185,7 @@ def main():
         clock.tick(30)
 
     pygame.quit()
+
 
 if __name__ == "__main__":
     main()
