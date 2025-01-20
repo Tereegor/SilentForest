@@ -58,6 +58,7 @@ def terminate():
 
 def start_screen():
     plenty_turn = [0]
+
     def draw_1():
 
         intro_text = ["Правила игры",
@@ -81,7 +82,7 @@ def start_screen():
     def draw_2():
         intro_text_2 = ["Управление",
                         "кнопки: вверх, вниз, вправо, влево - передвигают машинку",
-                        "кнопки: вверх и вправо, влево и вправо, разворачивают машинку",
+                        "кнопки: левый shift, правый shift, разворачивают машинку",
                         "кнопки: плюс и минус добавляют скорость",
                         "удачной игры!"]
         font = pygame.font.Font(None, 35)
@@ -95,6 +96,15 @@ def start_screen():
 
             text_coord += intro_rect.height
             screen.blit(string_rendered, intro_rect)
+
+    def go_to_the_play():
+        font = pygame.font.Font(None, 35)
+        pygame.draw.rect(screen, pygame.Color('green'), (380, 580, 200, 75))
+        string_rendered = font.render('Погнали!', 1, pygame.Color('Black'))
+        intro_rect = string_rendered.get_rect()
+        intro_rect.x = 420
+        intro_rect.y = 605
+        screen.blit(string_rendered, intro_rect)
 
     Right = True
     Left = False
@@ -113,9 +123,10 @@ def start_screen():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            elif event.type == pygame.KEYDOWN or \
-                    event.type == pygame.MOUSEBUTTONDOWN:
-                return
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if x in range(380, 580) and y in range(580, 655):
+                    return
         if Number < 5 and Jump and not Jump_down and Right:
             Number += 0.1
             Hight_jump[0] -= 1
@@ -171,6 +182,7 @@ def start_screen():
             Jump = True
         if coords_car[0] <= 270 and Left:
             Jump_down = True
+        go_to_the_play()
         pygame.display.flip()
         clock.tick(fps)
 
@@ -251,7 +263,7 @@ def place_total():
         reader = csv.reader(csvfile, delimiter=';', quotechar='"')
         for index, row in enumerate(reader):
             if index != 0:
-                 plenty_place.append(row[0])
+                plenty_place.append(row[0])
         for i in range(len(plenty_place)):
             plenty_finally.append(int(plenty_place[i]))
         plenty_finally_2 = sorted(plenty_finally)
@@ -291,6 +303,20 @@ def draw_end(screen):
     text_x = 125
     text_y = 370
     screen.blit(text, (text_x, text_y))
+
+
+def write_result():
+    f = open("Total_result", 'w')
+    if plenty_money[0] >= 150:
+        f.write('You win')
+    else:
+        f.write('You lose')
+    f.close()
+
+
+def sound():
+    pygame.mixer.music.load('Sound_triumf.mp3')
+    pygame.mixer.music.play()
 
 
 def money(screen):
@@ -497,6 +523,9 @@ class Car(pygame.sprite.Sprite):
             self.rect.y = 690
 
 
+STOP = False
+pygame.mixer.music.load('Sound_car.mp3')
+pygame.mixer.music.play(-1)
 area_start = [0, 230]
 area_finish = [270, 400]
 for i in range(120):
@@ -561,9 +590,9 @@ while running:
         keys = pygame.key.get_pressed()
         if event.type == pygame.QUIT:
             running = False
-        if keys[pygame.K_UP] and keys[pygame.K_RIGHT]:
+        if keys[pygame.K_RSHIFT]:
             name.turn_right()
-        elif keys[pygame.K_UP] and keys[pygame.K_LEFT]:
+        elif keys[pygame.K_LSHIFT]:
             name.turn_left()
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RIGHT:
@@ -606,6 +635,11 @@ while running:
     else:
         place_in_total_list()
         draw_end(screen)
+        if not STOP:
+            pygame.mixer.music.pause()
+            STOP = True
+            sound()
+            write_result()
     clock.tick(fps)
     pygame.display.flip()
 
