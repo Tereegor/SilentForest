@@ -1,9 +1,10 @@
 import pygame
 import os
 import json
+from PIL import Image
 
 # Настройки игры
-TILE_SIZE = 10
+TILE_SIZE = 20
 MAP_FILE = "assets/for_game/map.shifr"
 SAVE_FILE = "save.json"
 DIARY_FILE = "assets/for_game/diary.txt"
@@ -21,7 +22,6 @@ pygame.init()
 screen = pygame.display.set_mode((800, 600))
 pygame.display.set_caption("SilentForest (Beta)")
 
-
 def load_map(file_path):
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Файл карты {file_path} не найден")
@@ -29,15 +29,32 @@ def load_map(file_path):
     with open(file_path, "r") as f:
         return [line.strip() for line in f.readlines()]
 
-
 def load_hero_data(file_path):
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Файл сохранения {file_path} не найден")
 
     with open(file_path, "r") as file:
         data = json.load(file)
-        return data.get("selected_hero", "default_hero.png")
+        return data.get("selected_hero", "default_hero.gif")
 
+def load_hero_frames(gif_path, tile_size):
+    if not os.path.exists(gif_path):
+        raise FileNotFoundError(f"Изображение героя {gif_path} не найдено")
+
+    # Загрузка кадров из GIF
+    gif = Image.open(gif_path)
+    frames = []
+    try:
+        while True:
+            frame = gif.copy().convert("RGBA")
+            frame = frame.resize((tile_size * 3, tile_size * 3))  # Изменяем размер кадра
+            frame_surface = pygame.image.fromstring(frame.tobytes(), frame.size, frame.mode)
+            frames.append(frame_surface)
+            gif.seek(len(frames))  # Переключение на следующий кадр
+    except EOFError:
+        pass
+
+    return frames
 
 def load_diary(file_path):
     if not os.path.exists(file_path):
@@ -46,16 +63,14 @@ def load_diary(file_path):
     with open(file_path, "r", encoding="utf-8") as file:
         return [line.strip() for line in file.readlines()]
 
-
-def draw_map(game_map, player_pos, offset_x, offset_y, player_image):
+def draw_map(game_map, player_pos, offset_x, offset_y, player_frame):
     for y, row in enumerate(game_map):
         for x, cell in enumerate(row):
             if cell in COLORS:
                 color = COLORS[cell]
                 pygame.draw.rect(screen, color,
                                  ((x - offset_x) * TILE_SIZE, (y - offset_y) * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-    screen.blit(player_image, ((player_pos[0] - offset_x) * TILE_SIZE, (player_pos[1] - offset_y) * TILE_SIZE))
-
+    screen.blit(player_frame, ((player_pos[0] - offset_x) * TILE_SIZE, (player_pos[1] - offset_y) * TILE_SIZE))
 
 def is_walkable(game_map, x, y):
     for dx in range(3):
@@ -67,7 +82,6 @@ def is_walkable(game_map, x, y):
             if game_map[check_y][check_x] not in (".", "~", "D"):  # Проходимые клетки
                 return False
     return True
-
 
 def display_inventory(diary):
     running = True
@@ -123,24 +137,24 @@ def display_inventory(diary):
         screen.blit(diary_surface, (100, 100))
         pygame.display.flip()
 
-
 def main():
     clock = pygame.time.Clock()
     running = True
 
     selected_hero_filename = load_hero_data(SAVE_FILE)
-    player_image_path = os.path.join("assets", "heroes", f"{selected_hero_filename}.png")
+    player_image_path = os.path.join("assets", "heroes", f"{selected_hero_filename}.gif")
 
-    if not os.path.exists(player_image_path):
-        raise FileNotFoundError(f"Изображение героя {selected_hero_filename} не найдено в папке assets/heroes/")
-
-    player_image = pygame.image.load(player_image_path)
-    player_image = pygame.transform.scale(player_image, (TILE_SIZE * 3, TILE_SIZE * 3))
+    # Загружаем кадры GIF
+    player_frames = load_hero_frames(player_image_path, TILE_SIZE)
+    player_frame_index = 0
+    animation_speed = 2  # Чем больше значение, тем медленнее анимация
+    animation_counter = 0
 
     game_map = load_map(MAP_FILE)
     diary = ["Дневник"]  # Элемент дневника в инвентаре
 
     player_pos = [1, 1]
+    facing_right = True  # По умолчанию персонаж смотрит вправо
 
     screen_width, screen_height = screen.get_size()
     visible_width = screen_width // TILE_SIZE
@@ -163,8 +177,10 @@ def main():
             dy = 1
         if keys[pygame.K_LEFT]:
             dx = -1
+            facing_right = False  # Персонаж смотрит влево
         if keys[pygame.K_RIGHT]:
             dx = 1
+            facing_right = True  # Персонаж смотрит вправо
 
         new_x = player_pos[0] + dx
         new_y = player_pos[1] + dy
@@ -178,14 +194,24 @@ def main():
         offset_x = max(0, min(player_pos[0] - visible_width // 2, len(game_map[0]) - visible_width))
         offset_y = max(0, min(player_pos[1] - visible_height // 2, len(game_map) - visible_height))
 
+        # Анимация героя
+        animation_counter += 1
+        if animation_counter >= animation_speed:
+            player_frame_index = (player_frame_index + 1) % len(player_frames)
+            animation_counter = 0
+
+        # Отражение кадра героя в зависимости от направления
+        player_frame = player_frames[player_frame_index]
+        if not facing_right:
+            player_frame = pygame.transform.flip(player_frame, True, False)
+
         screen.fill((0, 0, 0))
-        draw_map(game_map, player_pos, offset_x, offset_y, player_image)
+        draw_map(game_map, player_pos, offset_x, offset_y, player_frame)
 
         pygame.display.flip()
         clock.tick(30)
 
     pygame.quit()
-
 
 if __name__ == "__main__":
     main()
