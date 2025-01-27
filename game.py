@@ -40,17 +40,15 @@ def load_hero_data(file_path):
 def load_hero_frames(gif_path, tile_size):
     if not os.path.exists(gif_path):
         raise FileNotFoundError(f"Изображение героя {gif_path} не найдено")
-
-    # Загрузка кадров из GIF
     gif = Image.open(gif_path)
     frames = []
     try:
         while True:
             frame = gif.copy().convert("RGBA")
-            frame = frame.resize((tile_size * 3, tile_size * 3))  # Изменяем размер кадра
+            frame = frame.resize((tile_size * 3, tile_size * 3))
             frame_surface = pygame.image.fromstring(frame.tobytes(), frame.size, frame.mode)
             frames.append(frame_surface)
-            gif.seek(len(frames))  # Переключение на следующий кадр
+            gif.seek(len(frames))
     except EOFError:
         pass
 
@@ -144,17 +142,16 @@ def main():
     selected_hero_filename = load_hero_data(SAVE_FILE)
     player_image_path = os.path.join("assets", "heroes", f"{selected_hero_filename}.gif")
 
-    # Загружаем кадры GIF
     player_frames = load_hero_frames(player_image_path, TILE_SIZE)
     player_frame_index = 0
-    animation_speed = 2  # Чем больше значение, тем медленнее анимация
+    animation_speed = 2
     animation_counter = 0
 
     game_map = load_map(MAP_FILE)
-    diary = ["Дневник"]  # Элемент дневника в инвентаре
+    diary = ["Дневник"]
 
     player_pos = [1, 1]
-    facing_right = True  # По умолчанию персонаж смотрит вправо
+    facing_right = True
 
     screen_width, screen_height = screen.get_size()
     visible_width = screen_width // TILE_SIZE
