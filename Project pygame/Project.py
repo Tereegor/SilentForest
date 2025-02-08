@@ -17,6 +17,8 @@ woods = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
 car_sprite = pygame.sprite.Group()
 money_sprite = pygame.sprite.Group()
+robbers_sprite = pygame.sprite.Group()
+pirate_sprite = pygame.sprite.Group()
 plenty_speed = []
 plenty_speed.append(30)
 plenty_money = []
@@ -63,11 +65,11 @@ def start_screen():
 
         intro_text = ["Правила игры",
                       "Нужно набрать как можно больше монет",
-                      "за две минут не касаясь леса"]
+                      "за две минут не касаясь леса и не проезжая на красный цвет"]
 
         fon = pygame.transform.scale(load_image('Start_foto.jpeg'), (1000, 700))
         screen.blit(fon, (0, 0))
-        font = pygame.font.Font(None, 35)
+        font = pygame.font.Font(None, 32)
         text_coord = 50
         for line in intro_text:
             string_rendered = font.render(line, 1, pygame.Color('Yellow'))
@@ -270,6 +272,27 @@ def place_total():
         your_place.append(len(plenty_finally) - plenty_finally_2.index(plenty_money[0]))
 
 
+def trafic_light(screen):
+    image = load_image('Foto_trafic_light.jpeg', -1)
+    image_1 = pygame.transform.scale(image, (70, 70))
+    screen.blit(image_1, (700, 265))
+    screen.blit(image_1, (342, 265))
+
+
+def red_color(screen):
+    pygame.draw.lines(screen, pygame.Color('red'), True,
+                      [[720, 285], [650, 300], [650, 270]], 5)
+    pygame.draw.lines(screen, pygame.Color('red'), True,
+                      [[360, 285], [290, 300], [290, 270]], 5)
+
+
+def green_color(screen):
+    pygame.draw.lines(screen, pygame.Color('green'), True,
+                      [[720, 285], [650, 300], [650, 270]], 5)
+    pygame.draw.lines(screen, pygame.Color('green'), True,
+                      [[360, 285], [290, 300], [290, 270]], 5)
+
+
 def remaining_time(screen):
     font = pygame.font.Font(None, 25)
     text = font.render(f'Осталось времени {pletny_second[0]} секунд', True, (pygame.Color('black')))
@@ -316,7 +339,13 @@ def write_result():
 
 def sound():
     pygame.mixer.music.load('Sound_triumf.mp3')
+    pygame.mixer.music.set_volume(1.5)
     pygame.mixer.music.play()
+
+
+def sound_boom():
+    sound_start = pygame.mixer.Sound('Sound_feiverk.mp3')
+    sound_start.play()
 
 
 def money(screen):
@@ -342,6 +371,88 @@ fence_6 = Fences(720, 270, 270, 180)
 fence_7 = Fences(0, 540, 270, 180)
 fence_8 = Fences(360, 540, 270, 180)
 fence_9 = Fences(720, 540, 270, 180)
+need_attack = [0]
+need_restart = True
+Count_bomb = 0
+plenty_coords_bomb = []
+
+
+class Pirate(pygame.sprite.Sprite):
+    image = load_image("Pirate.jpeg")
+    image_1 = pygame.transform.scale(image, (50, 50))
+
+    def __init__(self):
+        super().__init__(pirate_sprite)
+        self.image = Pirate.image_1
+        self.rect = self.image.get_rect()
+        self.rect.x = 50
+        self.rect.y = 195
+
+    def up(self):
+        global need_restart
+        if not GREEN:
+            self.rect = self.rect.move(0.5, 0)
+            self.rect.x += 0.5
+        elif GREEN and (715 >= self.rect.x >= 540):
+            self.rect = self.rect.move(0.5, 0)
+            self.rect.x += 0.5
+        elif GREEN and (210 <= self.rect.x <= 300):
+            self.rect = self.rect.move(0.5, 0)
+            self.rect.x += 0.5
+        if GREEN and need_restart:
+            self.x = random.randrange(315, 335)
+            self.y = random.randrange(10, 670)
+            need_restart = False
+            plenty_coords_bomb.append(self.x)
+            plenty_coords_bomb.append(self.y)
+        if not GREEN:
+            need_attack.clear()
+            need_attack.append(0)
+            need_restart = True
+            plenty_coords_bomb.clear()
+
+    def back(self):
+        if self.rect.x >= 950:
+            self.rect.x = 5
+
+    def attack(self, screen):
+        global Count_bomb
+        sprite_throw_raket = load_image("Hot_air.png")
+        thing_2 = [sprite_throw_raket.subsurface((0 + i * 100, 100, 80, 80)) for i in range(6)]
+        if GREEN:
+            pygame.draw.rect(screen,
+                             pygame.Color('black'), (self.x, self.y, 15, 15))
+        else:
+            foto = pygame.transform.scale(thing_2[int(Count_bomb) % 6], (40, 40))
+            screen.blit(foto, (self.x, self.y))
+            Count_bomb += 0.05
+
+
+class Robbers(pygame.sprite.Sprite):
+    image = load_image("Robbers.jpeg")
+    image_1 = pygame.transform.scale(image, (100, 100))
+
+    def __init__(self):
+        super().__init__(robbers_sprite)
+        self.image = Robbers.image_1
+        self.rect = self.image.get_rect()
+        self.rect.x = 40
+        self.rect.y = 180
+
+    def up(self):
+        if not GREEN:
+            self.rect = self.rect.move(0.5, 0)
+            self.rect.x += 0.5
+        elif GREEN and (715 >= self.rect.x >= 540):
+            self.rect = self.rect.move(0.5, 0)
+            self.rect.x += 0.5
+        elif GREEN and (210 <= self.rect.x <= 300):
+            self.rect = self.rect.move(0.5, 0)
+            self.rect.x += 0.5
+
+    def back(self):
+        if self.rect.x >= 950:
+            self.rect.x = 5
 
 
 class Car(pygame.sprite.Sprite):
@@ -354,6 +465,14 @@ class Car(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = 635
         self.rect.y = 600
+        self.need_return = False
+
+    def conflict(self):
+        if len(plenty_coords_bomb) != 0:
+            if self.rect.x in range(plenty_coords_bomb[0] - 40, plenty_coords_bomb[0] + 40) and self.rect.y in range(
+                    plenty_coords_bomb[1] - 40, plenty_coords_bomb[1] + 40):
+                self.need_return = True
+                sound_boom()
 
     def up(self):
         if not pygame.sprite.collide_mask(self, fence) and not pygame.sprite.collide_mask(self,
@@ -361,7 +480,9 @@ class Car(pygame.sprite.Sprite):
             self, fence_3) and not pygame.sprite.collide_mask(self, fence_4) \
                 and not pygame.sprite.collide_mask(self, fence_5) and not pygame.sprite.collide_mask(self, fence_6) \
                 and not pygame.sprite.collide_mask(self, fence_7) and not pygame.sprite.collide_mask(self, fence_8) \
-                and not pygame.sprite.collide_mask(self, fence_9) and not pygame.sprite.collide_mask(self, cash):
+                and not pygame.sprite.collide_mask(self, fence_9) and not pygame.sprite.collide_mask(self, cash) and \
+                not (self.rect.y in range(250, 280) and not GREEN) and \
+                not pygame.sprite.collide_mask(self, afraid_people) and not self.need_return:
             if plenty_speed[0] * 0.1 >= 1:
                 self.rect = self.rect.move(0, -(plenty_speed[0] * 0.1))
                 self.rect.y -= plenty_speed[0] * 0.1
@@ -374,12 +495,21 @@ class Car(pygame.sprite.Sprite):
             money_sprite = pygame.sprite.Group()
             plenty_order[0] += 1
             plenty_need_money[0] = 1
+        elif self.rect.y in range(250, 280) and not GREEN:
+            if plenty_money[0] != 0:
+                plenty_money[0] -= 5
+            self.image = Car.image_1
+            self.rect.x = 635
+            self.rect.y = 600
         else:
             if plenty_money[0] != 0:
                 plenty_money[0] -= 5
             self.image = Car.image_1
             self.rect.x = 635
             self.rect.y = 600
+            self.need_return = False
+            sound_metall.play()
+            pygame.mixer.music.set_volume(0.5)
 
     def turn_right(self):
         if not pygame.sprite.collide_mask(self, fence) and not pygame.sprite.collide_mask(self,
@@ -387,7 +517,8 @@ class Car(pygame.sprite.Sprite):
             self, fence_3) and not pygame.sprite.collide_mask(self, fence_4) \
                 and not pygame.sprite.collide_mask(self, fence_5) and not pygame.sprite.collide_mask(self, fence_6) \
                 and not pygame.sprite.collide_mask(self, fence_7) and not pygame.sprite.collide_mask(self, fence_8) \
-                and not pygame.sprite.collide_mask(self, fence_9) and not pygame.sprite.collide_mask(self, cash):
+                and not pygame.sprite.collide_mask(self, fence_9) and not pygame.sprite.collide_mask(self, cash) \
+                and not pygame.sprite.collide_mask(self, afraid_people) and not self.need_return:
             self.image = pygame.transform.rotate(self.image, -90)
             self.rect = self.rect.move(-3, 3)
             self.rect.x -= 3
@@ -404,6 +535,9 @@ class Car(pygame.sprite.Sprite):
             self.image = Car.image_1
             self.rect.x = 635
             self.rect.y = 600
+            self.need_return = False
+            sound_metall.play()
+            pygame.mixer.music.set_volume(0.5)
 
     def turn_left(self):
         if not pygame.sprite.collide_mask(self, fence) and not pygame.sprite.collide_mask(self,
@@ -411,7 +545,8 @@ class Car(pygame.sprite.Sprite):
             self, fence_3) and not pygame.sprite.collide_mask(self, fence_4) \
                 and not pygame.sprite.collide_mask(self, fence_5) and not pygame.sprite.collide_mask(self, fence_6) \
                 and not pygame.sprite.collide_mask(self, fence_7) and not pygame.sprite.collide_mask(self, fence_8) \
-                and not pygame.sprite.collide_mask(self, fence_9) and not pygame.sprite.collide_mask(self, cash):
+                and not pygame.sprite.collide_mask(self, fence_9) and not pygame.sprite.collide_mask(self, cash) \
+                and not pygame.sprite.collide_mask(self, afraid_people) and not self.need_return:
             self.image = pygame.transform.rotate(self.image, 90)
             self.rect = self.rect.move(3, 3)
             self.rect.x += 3
@@ -428,6 +563,9 @@ class Car(pygame.sprite.Sprite):
             self.image = Car.image_1
             self.rect.x = 635
             self.rect.y = 600
+            self.need_return = False
+            sound_metall.play()
+            pygame.mixer.music.set_volume(0.5)
 
     def right(self):
         if not pygame.sprite.collide_mask(self, fence) and not pygame.sprite.collide_mask(self,
@@ -435,7 +573,8 @@ class Car(pygame.sprite.Sprite):
             self, fence_3) and not pygame.sprite.collide_mask(self, fence_4) \
                 and not pygame.sprite.collide_mask(self, fence_5) and not pygame.sprite.collide_mask(self, fence_6) \
                 and not pygame.sprite.collide_mask(self, fence_7) and not pygame.sprite.collide_mask(self, fence_8) \
-                and not pygame.sprite.collide_mask(self, fence_9) and not pygame.sprite.collide_mask(self, cash):
+                and not pygame.sprite.collide_mask(self, fence_9) and not pygame.sprite.collide_mask(self, cash) \
+                and not pygame.sprite.collide_mask(self, afraid_people) and not self.need_return:
             self.rect = self.rect.move(plenty_speed[0] * 0.1, 0)
             self.rect.x += plenty_speed[0] * 0.1
         elif pygame.sprite.collide_mask(self, cash):
@@ -450,6 +589,9 @@ class Car(pygame.sprite.Sprite):
             self.image = Car.image_1
             self.rect.x = 635
             self.rect.y = 600
+            self.need_return = False
+            sound_metall.play()
+            pygame.mixer.music.set_volume(0.5)
 
     def left(self):
         if not pygame.sprite.collide_mask(self, fence) and not pygame.sprite.collide_mask(self,
@@ -457,7 +599,8 @@ class Car(pygame.sprite.Sprite):
             self, fence_3) and not pygame.sprite.collide_mask(self, fence_4) \
                 and not pygame.sprite.collide_mask(self, fence_5) and not pygame.sprite.collide_mask(self, fence_6) \
                 and not pygame.sprite.collide_mask(self, fence_7) and not pygame.sprite.collide_mask(self, fence_8) \
-                and not pygame.sprite.collide_mask(self, fence_9) and not pygame.sprite.collide_mask(self, cash):
+                and not pygame.sprite.collide_mask(self, fence_9) and not pygame.sprite.collide_mask(self, cash) \
+                and not pygame.sprite.collide_mask(self, afraid_people) and not self.need_return:
             if plenty_speed[0] * 0.1 >= 1:
                 self.rect = self.rect.move(-(plenty_speed[0] * 0.1), 0)
                 self.rect.x -= plenty_speed[0] * 0.1
@@ -476,6 +619,9 @@ class Car(pygame.sprite.Sprite):
             self.image = Car.image_1
             self.rect.x = 635
             self.rect.y = 600
+            self.need_return = False
+            sound_metall.play()
+            pygame.mixer.music.set_volume(0.5)
 
     def down(self):
         if not pygame.sprite.collide_mask(self, fence) and not pygame.sprite.collide_mask(self,
@@ -483,7 +629,10 @@ class Car(pygame.sprite.Sprite):
             self, fence_3) and not pygame.sprite.collide_mask(self, fence_4) \
                 and not pygame.sprite.collide_mask(self, fence_5) and not pygame.sprite.collide_mask(self, fence_6) \
                 and not pygame.sprite.collide_mask(self, fence_7) and not pygame.sprite.collide_mask(self, fence_8) \
-                and not pygame.sprite.collide_mask(self, fence_9) and not pygame.sprite.collide_mask(self, cash):
+                and not pygame.sprite.collide_mask(self, fence_9) and not pygame.sprite.collide_mask(self,
+                                                                                                     cash) and not (
+                self.rect.y in range(250, 280) and not GREEN) and not pygame.sprite.collide_mask(self, afraid_people) \
+                and not self.need_return:
             self.rect = self.rect.move(0, plenty_speed[0] * 0.1)
             self.rect.y += plenty_speed[0] * 0.1
         elif pygame.sprite.collide_mask(self, cash):
@@ -492,12 +641,21 @@ class Car(pygame.sprite.Sprite):
             money_sprite = pygame.sprite.Group()
             plenty_order[0] += 1
             plenty_need_money[0] = 1
+        elif self.rect.y in range(250, 280) and not GREEN:
+            if plenty_money[0] != 0:
+                plenty_money[0] -= 5
+            self.image = Car.image_1
+            self.rect.x = 635
+            self.rect.y = 600
         else:
             if plenty_money[0] != 0:
                 plenty_money[0] -= 5
             self.image = Car.image_1
             self.rect.x = 635
             self.rect.y = 600
+            self.need_return = False
+            sound_metall.play()
+            pygame.mixer.music.set_volume(0.5)
 
     def more_speed(self):
         plenty_speed[0] += 5
@@ -523,9 +681,11 @@ class Car(pygame.sprite.Sprite):
             self.rect.y = 690
 
 
+GREEN = True
 STOP = False
 pygame.mixer.music.load('Sound_car.mp3')
 pygame.mixer.music.play(-1)
+sound_metall = pygame.mixer.Sound('Sound_metall.mp3')
 area_start = [0, 230]
 area_finish = [270, 400]
 for i in range(120):
@@ -551,6 +711,8 @@ area_finish = [540, 680]
 for i in range(120):
     Fir(all_sprites)
 name = Car()
+afraid_people = Robbers()
+attack_men = Pirate()
 move_left = move_right = move_up = move_down = False
 number = dt.datetime.now().time()
 plenty_time = (str(number).split(':'))
@@ -622,6 +784,7 @@ while running:
             name.up()
         elif move_down:
             name.down()
+        name.conflict()
         speed(screen)
         remaining_time(screen)
         money(screen)
@@ -630,8 +793,24 @@ while running:
         name.transfer_gorizontal_twice()
         name.transfer_vertical_first()
         name.transfer_vertical_twice()
+        trafic_light(screen)
         car_sprite.update()
         car_sprite.draw(screen)
+        if plenty_number[-1] % 10 == 0 and (plenty_number[-1] / 10) % 2 == 0:
+            GREEN = True
+        elif plenty_number[-1] % 10 == 0 and (plenty_number[-1] / 10) % 2 == 1:
+            GREEN = False
+        if GREEN:
+            green_color(screen)
+        else:
+            red_color(screen)
+        afraid_people.up()
+        afraid_people.back()
+        robbers_sprite.draw(screen)
+        attack_men.up()
+        attack_men.back()
+        attack_men.attack(screen)
+        pirate_sprite.draw(screen)
     else:
         place_in_total_list()
         draw_end(screen)
