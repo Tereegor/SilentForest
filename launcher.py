@@ -151,7 +151,7 @@ def main():
         if keys[0]:
             if new_game_button.collidepoint(pos):
                 save_game({"new_game": True, "selected_hero": selected_hero})
-                game.main()
+                game.Game().run()
                 running = False
             elif load_save_button and load_save_button.collidepoint(pos) and save_data:
                 print("Загрузка последнего сохранения")
