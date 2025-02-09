@@ -1,48 +1,112 @@
 import pygame
 import os
 import json
+import random
+import subprocess
 from PIL import Image
 
-# Настройки игры
-TILE_SIZE = 20
-MAP_FILE = "assets/for_game/map.shifr"
-SAVE_FILE = "save.json"
-DIARY_FILE = "assets/for_game/diary.txt"
-
-COLORS = {
-    "#": (139, 69, 19),  # Коричневый цвет для стены
-    ".": (34, 139, 34),  # Зеленый цвет для земли
-    "~": (0, 0, 255),  # Синий цвет для воды
-    "T": (0, 128, 0),  # Темно-зеленый для деревьев
-    "G": (128, 128, 128),  # Серый для камней
-    "D": (184, 134, 11),  # Золотистый для песка
-}
+TILE_SIZE = 12
+SCREEN_WIDTH, SCREEN_HEIGHT = 1200, 900
+FPS = 60
+MAP_FILE = 'assets/for_game/map.jpg'
+SPAWN = (10, 170)
+SPEED = 1
+MAX_WINS_PER_GAME = 1
 
 
 class Game:
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((1200, 800))
+        os.environ['SDL_VIDEO_CENTERED'] = '1'
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("SilentForest (Beta)")
         self.clock = pygame.time.Clock()
         self.running = True
 
         self.map = Map(MAP_FILE)
-        self.player = Player(SAVE_FILE, TILE_SIZE)
-        self.inventory = Inventory(DIARY_FILE)
-        self.mini_map = MiniMap(self.map, (200, 200))
+        self.player = Player('save.json', TILE_SIZE, scale_factor=4)
+        self.inventory = Inventory("assets/for_game/diary.txt")
 
-        # self.sounds = {
-        #     "step": pygame.mixer.Sound("assets/sounds/step.wav"),
-        #     "inventory": pygame.mixer.Sound("assets/sounds/inventory.wav"),
-        # }
+        self.minigames = ["minigames/first.py", "minigames/second.py", "minigames/third.py"]
+
+        self.game_locations = [(248, 88), (68, 453), (496, 338)]
+        self.location_minigames = {loc: random.choice(self.minigames) for loc in self.game_locations}
+
+        self.final_game_location = (457, 97)
+        self.final_game_path = "minigames/final_game/Project_pygame/Project.py"
+
+        self.notification_text = None
+        self.current_location = None
+
+        self.first_game_won = False
+        self.second_game_won = False
+        self.third_game_won = False
+        self.final_game_won = False
+
+        self.e_pressed = False
+
+    def check_game_location(self):
+        """Проверяет, находится ли игрок рядом с одной из целей."""
+        player_x, player_y = self.player.position
+
+        for target_x, target_y in self.game_locations:
+            if (abs(player_x - target_x) <= 7) and (abs(player_y - target_y) <= 7):
+                self.current_location = (target_x, target_y)
+                minigame_script = self.location_minigames[self.current_location]
+
+                if self.is_game_won(minigame_script):
+                    self.notification_text = "Вы уже побеждали в этой мини-игре!"
+                else:
+                    self.notification_text = "Нажмите 'E', чтобы начать мини-игру"
+                return
+
+        fx, fy = self.final_game_location
+        if (abs(player_x - fx) <= 7) and (abs(player_y - fy) <= 7):
+            if self.all_games_won():
+                self.notification_text = "Нажмите 'E' для финальной игры!"
+                self.current_location = self.final_game_location
+            else:
+                self.notification_text = "Вы должны победить в 3 мини-играх!"
+                self.current_location = None
+            return
+
+        self.notification_text = None
+        self.current_location = None
+
+    def all_games_won(self):
+        """Проверяет, победил ли игрок во всех 3 мини-играх."""
+        return self.first_game_won and self.second_game_won and self.third_game_won
+
+    def is_game_won(self, game_script):
+        """Возвращает True, если игрок уже побеждал в данной мини-игре."""
+        if game_script == "minigames/first.py":
+            return self.first_game_won
+        elif game_script == "minigames/second.py":
+            return self.second_game_won
+        elif game_script == "minigames/third.py":
+            return self.third_game_won
+        elif game_script == self.final_game_path:
+            return self.final_game_won
+        return False
+
+    def mark_game_won(self, game_script):
+        """Помечает мини-игру как выигранную."""
+        if game_script == "minigames/first.py":
+            self.first_game_won = True
+        elif game_script == "minigames/second.py":
+            self.second_game_won = True
+        elif game_script == "minigames/third.py":
+            self.third_game_won = True
+        elif game_script == self.final_game_path:
+            self.final_game_won = True
 
     def run(self):
         while self.running:
             self.handle_events()
             self.update()
+            self.check_game_location()
             self.draw()
-            self.clock.tick(30)
+            self.clock.tick(FPS)
         pygame.quit()
 
     def handle_events(self):
@@ -50,96 +114,124 @@ class Game:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_x:
+                    print(f"Координаты игрока: X={self.player.position[0]}, Y={self.player.position[1]}")
+
+                if event.key == pygame.K_e and not self.e_pressed and self.notification_text:
+                    self.e_pressed = True
+                    self.start_mini_game()
+
                 if event.key == pygame.K_i:
-                    # self.sounds["inventory"].play()
                     self.inventory.display(self.screen)
 
-        if keys[pygame.K_UP]:
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_e:
+                    self.e_pressed = False
+
+        if keys[pygame.K_w]:
             self.player.move(0, -1, self.map)
-            # self.sounds["step"].play()
-        if keys[pygame.K_DOWN]:
+        if keys[pygame.K_s]:
             self.player.move(0, 1, self.map)
-            # self.sounds["step"].play()
-        if keys[pygame.K_LEFT]:
+        if keys[pygame.K_a]:
             self.player.move(-1, 0, self.map, facing_right=False)
-            # self.sounds["step"].play()
-        if keys[pygame.K_RIGHT]:
+        if keys[pygame.K_d]:
             self.player.move(1, 0, self.map, facing_right=True)
-            # self.sounds["step"].play()
+
+    def start_mini_game(self):
+        """Запускает мини-игру, если игрок ещё не побеждал в ней."""
+        if self.current_location:
+            if self.current_location == self.final_game_location:
+                if self.all_games_won():
+                    minigame_script = "minigames/final_game/Project_pygame/Project.py"
+                else:
+                    print("Вы должны победить в 3 мини-играх перед финальной игрой!")
+                    return
+            else:
+                minigame_script = self.location_minigames[self.current_location]
+
+            if self.is_game_won(minigame_script):
+                print("Вы уже побеждали в этой мини-игре!")
+                return
+
+            print(f"Запуск мини-игры: {minigame_script}")
+            result = subprocess.run(["python", minigame_script], capture_output=True, text=True)
+
+            if "WIN" in result.stdout:
+                self.mark_game_won(minigame_script)
+                print(f"Вы победили в {minigame_script}!")
 
     def update(self):
         self.player.update_animation()
 
     def draw(self):
         self.screen.fill((0, 0, 0))
-        offset_x, offset_y = self.map.calculate_offset(self.player.position, self.screen.get_size())
-        self.map.draw(self.screen, offset_x, offset_y)
-        self.player.draw(self.screen, offset_x, offset_y)
-        self.mini_map.draw(self.screen, self.player.position)
-        self.draw_sanity_bar()
-        pygame.display.flip()
 
-    def draw_sanity_bar(self):
-        font = pygame.font.Font(None, 36)
-        sanity_text = font.render(f"Рассудок: {self.player.sanity}", True, (255, 255, 255))
-        bar_x, bar_y, bar_width, bar_height = 10, 10, 200, 20
-        sanity_ratio = self.player.sanity / 100
-        pygame.draw.rect(self.screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
-        pygame.draw.rect(self.screen, (0, 255, 0), (bar_x, bar_y, bar_width * sanity_ratio, bar_height))
-        self.screen.blit(sanity_text, (bar_x, bar_y - 30))
+        offset_x = SCREEN_WIDTH // 2 - self.player.position[0] * TILE_SIZE
+        offset_y = SCREEN_HEIGHT // 2 - self.player.position[1] * TILE_SIZE
+
+        self.map.draw(self.screen, offset_x, offset_y)
+        self.player.draw(self.screen)
+
+        if self.notification_text:
+            font = pygame.font.SysFont(None, 36)
+            text_surface = font.render(self.notification_text, True, (255, 255, 255))
+            self.screen.blit(text_surface, (SCREEN_WIDTH - text_surface.get_width() - 20, 20))
+
+        pygame.display.flip()
 
 
 class Map:
     def __init__(self, file_path):
-        self.grid = self.load_map(file_path)
+        self.image = pygame.image.load(file_path).convert()
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
 
-    def load_map(self, file_path):
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"Файл карты {file_path} не найден")
-        with open(file_path, "r") as f:
-            return [line.strip() for line in f.readlines()]
-
-    def draw(self, screen, offset_x, offset_y):
-        for y, row in enumerate(self.grid):
-            for x, cell in enumerate(row):
-                if cell in COLORS:
-                    color = COLORS[cell]
-                    pygame.draw.rect(screen, color,
-                                     ((x - offset_x) * TILE_SIZE, (y - offset_y) * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+        self.walkable_colors = [
+            (190, 120, 86),
+            (36, 114, 13)
+        ]
+        self.tolerance = 10
 
     def is_walkable(self, x, y):
-        for dx in range(3):
-            for dy in range(3):
-                check_x = x + dx
-                check_y = y + dy
-                if not (0 <= check_x < len(self.grid[0]) and 0 <= check_y < len(self.grid)):
-                    return False
-                if self.grid[check_y][check_x] not in (".", "~", "D"):
-                    return False
-        return True
+        """Проверяет, является ли клетка (x, y) проходимой."""
+        if 0 <= x < self.width and 0 <= y < self.height:
+            color = self.image.get_at((x, y))[:3]
+            for walkable_color in self.walkable_colors:
+                if all(abs(c - wc) <= self.tolerance for c, wc in zip(color, walkable_color)):
+                    return True
+            return False
+        return False
 
-    def calculate_offset(self, player_pos, screen_size):
-        screen_width, screen_height = screen_size
-        visible_width = screen_width // TILE_SIZE
-        visible_height = screen_height // TILE_SIZE
-        offset_x = max(0, min(player_pos[0] - visible_width // 2, len(self.grid[0]) - visible_width))
-        offset_y = max(0, min(player_pos[1] - visible_height // 2, len(self.grid) - visible_height))
-        return offset_x, offset_y
+    def draw(self, screen, offset_x, offset_y):
+        start_x = max(0, (-offset_x) // TILE_SIZE)
+        start_y = max(0, (-offset_y) // TILE_SIZE)
+        end_x = min(self.width, (SCREEN_WIDTH - offset_x) // TILE_SIZE + 1)
+        end_y = min(self.height, (SCREEN_HEIGHT - offset_y) // TILE_SIZE + 1)
+
+        for y in range(start_y, end_y):
+            for x in range(start_x, end_x):
+                color = self.image.get_at((x, y))
+                pygame.draw.rect(screen, color,
+                                 (x * TILE_SIZE + offset_x,
+                                  y * TILE_SIZE + offset_y,
+                                  TILE_SIZE, TILE_SIZE))
 
 
 class Player:
-    def __init__(self, save_file, tile_size):
-        self.position = [1, 1]
+    def __init__(self, save_file, tile_size, scale_factor=2):
+        self.position = list(SPAWN)
         self.tile_size = tile_size
+        self.scale_factor = scale_factor
         self.facing_right = True
-        self.frames = self.load_hero_frames(save_file, tile_size)
+        self.frames = self.load_hero_frames(save_file)
         self.current_frame_index = 0
         self.animation_speed = 2
         self.animation_counter = 0
         self.sanity = 20
 
-    def load_hero_frames(self, save_file, tile_size):
+    def load_hero_frames(self, save_file):
         if not os.path.exists(save_file):
             raise FileNotFoundError(f"Файл сохранения {save_file} не найден")
         with open(save_file, "r") as file:
@@ -152,24 +244,43 @@ class Player:
 
         gif = Image.open(hero_path)
         frames = []
-        try:
-            while True:
+        frame_index = 0
+        while True:
+            try:
+                gif.seek(frame_index)
                 frame = gif.copy().convert("RGBA")
-                frame = frame.resize((tile_size * 3, tile_size * 3))
+                new_size = (self.tile_size * self.scale_factor, self.tile_size * self.scale_factor)
+                frame = frame.resize(new_size)
                 frame_surface = pygame.image.fromstring(frame.tobytes(), frame.size, frame.mode)
                 frames.append(frame_surface)
-                gif.seek(len(frames))
-        except EOFError:
-            pass
+                frame_index += 1
+            except EOFError:
+                break
         return frames
 
+    def draw(self, screen):
+        frame = self.frames[self.current_frame_index]
+        if not self.facing_right:
+            frame = pygame.transform.flip(frame, True, False)
+
+        player_width = self.tile_size * self.scale_factor
+        player_height = self.tile_size * self.scale_factor
+
+        player_x = SCREEN_WIDTH // 2 - player_width // 2
+        player_y = SCREEN_HEIGHT // 2 - player_height // 2
+
+        screen.blit(frame, (player_x, player_y))
+
     def move(self, dx, dy, game_map, facing_right=None):
+        dx *= SPEED
+        dy *= SPEED
+
         new_x = self.position[0] + dx
         new_y = self.position[1] + dy
 
-        if game_map.is_walkable(new_x, self.position[1]):
+        if game_map.is_walkable(int(new_x), int(self.position[1])):
             self.position[0] = new_x
-        if game_map.is_walkable(self.position[0], new_y):
+        if game_map.is_walkable(int(self.position[0]), int(new_y)):
             self.position[1] = new_y
 
         if facing_right is not None:
@@ -180,12 +291,6 @@ class Player:
         if self.animation_counter >= self.animation_speed:
             self.current_frame_index = (self.current_frame_index + 1) % len(self.frames)
             self.animation_counter = 0
-
-    def draw(self, screen, offset_x, offset_y):
-        frame = self.frames[self.current_frame_index]
-        if not self.facing_right:
-            frame = pygame.transform.flip(frame, True, False)
-        screen.blit(frame, ((self.position[0] - offset_x) * TILE_SIZE, (self.position[1] - offset_y) * TILE_SIZE))
 
 
 class Inventory:
@@ -252,33 +357,6 @@ class Inventory:
 
             screen.blit(diary_surface, (100, 100))
             pygame.display.flip()
-
-
-class MiniMap:
-    def __init__(self, game_map, size):
-        self.game_map = game_map
-        self.width, self.height = size
-
-    def draw(self, screen, player_pos):
-        minimap_surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
-        minimap_surface.fill((0, 0, 0, 128))
-
-        scale = min(self.width / len(self.game_map.grid[0]), self.height / len(self.game_map.grid))
-
-        for y, row in enumerate(self.game_map.grid):
-            for x, cell in enumerate(row):
-                if cell in COLORS:
-                    color = COLORS[cell]
-                    pygame.draw.rect(minimap_surface, color,
-                                     (x * scale, y * scale, scale, scale))
-
-        player_x = player_pos[0] * scale
-        player_y = player_pos[1] * scale
-        pygame.draw.circle(minimap_surface, (255, 0, 0), (int(player_x + scale / 2), int(player_y + scale / 2)), 5)
-
-        pygame.draw.rect(minimap_surface, (255, 255, 255), (0, 0, self.width, self.height), 2)
-
-        screen.blit(minimap_surface, (screen.get_width() - self.width - 10, 10))
 
 
 if __name__ == "__main__":
