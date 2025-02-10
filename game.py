@@ -45,6 +45,8 @@ class Game:
 
         self.e_pressed = False
 
+        self.fade_transition = None
+
     def check_game_location(self):
         """Проверяет, находится ли игрок рядом с одной из целей."""
         player_x, player_y = self.player.position
@@ -161,6 +163,48 @@ class Game:
             if "WIN" in result.stdout:
                 self.mark_game_won(minigame_script)
                 print(f"Вы победили в {minigame_script}!")
+
+                if minigame_script == self.final_game_path:
+                    with open("minigames/final_game/Project_pygame/Total_result.txt", "r") as file:
+                        if "WIN" in file.read():
+                            self.fade_transition = FadeTransition(self.screen, SCREEN_WIDTH, SCREEN_HEIGHT)
+                            while not self.fade_transition.fade_complete:
+                                self.fade_transition.start_fade()
+                                pygame.display.flip()
+                                self.clock.tick(60)
+                            self.show_credits()
+
+    def show_credits(self):
+        font = pygame.font.SysFont(None, 48)
+        credits_text = [
+            "Титры",
+            "Спасибо за игру!",
+            "Разработчики: Аркадий и Егор",
+            "Художники: Аркадий и Егор",
+            "Музыка: Аркадий",
+            "Сюжет: Егор",
+        ]
+        self.screen.fill((0, 0, 0))
+        y_offset = SCREEN_HEIGHT
+        running = True
+
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+            self.screen.fill((0, 0, 0))
+            for i, line in enumerate(credits_text):
+                text_surface = font.render(line, True, (255, 255, 255))
+                text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, y_offset + i * 50))
+                self.screen.blit(text_surface, text_rect)
+
+            y_offset -= 1
+            if y_offset < -len(credits_text) * 50:
+                running = False
+
+            pygame.display.flip()
+            self.clock.tick(60)
 
     def update(self):
         self.player.update_animation()
@@ -357,6 +401,31 @@ class Inventory:
 
             screen.blit(diary_surface, (100, 100))
             pygame.display.flip()
+
+
+class FadeTransition:
+    def __init__(self, screen, width, height):
+        self.screen = screen
+        self.width = width
+        self.height = height
+        self.fade_surface = pygame.Surface((width, height))
+        self.fade_surface.fill((0, 0, 0))
+        self.alpha = 0
+        self.fade_speed = 5
+        self.fade_complete = False
+
+    def start_fade(self):
+        if self.alpha < 255:
+            self.alpha += self.fade_speed
+            if self.alpha >= 255:
+                self.alpha = 255
+                self.fade_complete = True
+        self.fade_surface.set_alpha(self.alpha)
+        self.screen.blit(self.fade_surface, (0, 0))
+
+    def reset(self):
+        self.alpha = 0
+        self.fade_complete = False
 
 
 if __name__ == "__main__":
