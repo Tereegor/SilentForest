@@ -91,9 +91,9 @@ python main.py
 
 Фотографии
 ----------
-![img.png](img.png)
-![img_1.png](img_1.png)
-![img_2.png](img_2.png)
+![img.png](site/img.png)
+![img_1.png](site/img_1.png)
+![img_2.png](site/img_2.png)
 
 
 Сайт нашей игры
