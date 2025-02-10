@@ -329,7 +329,7 @@ def draw_end(screen):
 
 
 def write_result():
-    f = open("Total_result", 'w')
+    f = open("Total_result.txt", 'w')
     if plenty_money[0] >= 150:
         f.write('WIN')
     else:
